@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from .utils import crawl_site, keyword_check_logic
 import json, csv, io
+import os 
 
 # Simple in-memory store for latest results (dev use only)
 LAST_RUN_RESULTS = []

@@ -16,6 +16,7 @@ import requests
 import time
 import re
 import json
+import os
 from collections import deque
 from urllib.parse import urlparse, urljoin, urlunparse, parse_qsl, urlencode
 from bs4 import BeautifulSoup
@@ -373,36 +374,48 @@ def analyze_page_quality(soup):
     return result
 
 # -----------------------------
-# LINKS
+# LINKS (RENDER-SAFE)
 # -----------------------------
 def analyze_links(url, soup, parsed, session=None):
+    """
+    Render-safe link analyzer:
+    - Counts internal/external links
+    - Broken link checking is DISABLED on Render to prevent worker timeout
+    """
     session = session or requests
     base = parsed.netloc
     result = {"Internal": 0, "External": 0, "Broken": 0}
-    links = soup.find_all("a", href=True)[:160]
+
+    links = soup.find_all("a", href=True)[:120]
+
     for a in links:
         href = a.get("href")
-        full_link = urljoin(url, href)
-        full_link = normalize_url(full_link)
+        if not href:
+            continue
+
+        full_link = normalize_url(urljoin(url, href))
         parsed_link = urlparse(full_link)
+
         if parsed_link.scheme not in ("http", "https"):
             continue
+
         if parsed_link.netloc == base:
             result["Internal"] += 1
         else:
             result["External"] += 1
-        # Broken check: HEAD then GET fallback
+
+        # ❗ Broken link checks DISABLED on Render (critical)
+        if os.environ.get("RENDER"):
+            continue
+
+        # Local / dev only
         try:
-            r = session.head(full_link, timeout=4, allow_redirects=True)
+            r = session.head(full_link, timeout=3, allow_redirects=True)
             if r.status_code >= 400:
                 result["Broken"] += 1
         except Exception:
-            try:
-                r = session.get(full_link, timeout=4)
-                if r.status_code >= 400:
-                    result["Broken"] += 1
-            except Exception:
-                result["Broken"] += 1
+            result["Broken"] += 1
+
     return result
 
 # -----------------------------
