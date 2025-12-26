@@ -21,24 +21,36 @@ from collections import deque
 from urllib.parse import urlparse, urljoin, urlunparse, parse_qsl, urlencode
 from bs4 import BeautifulSoup
 
+IS_LIVE = bool(os.environ.get("RENDER"))
+
+
 # -----------------------------
 # CONFIG
 # -----------------------------
-DEEP_MAX_PAGES = 120
-DEEP_MAX_LINKS_PER_PAGE = 12
-DEEP_MAX_DEPTH = 4
+# -----------------------------
+# CONFIG
+# -----------------------------
 
-DEFAULT_MAX_PAGES = 8
+IS_LIVE = bool(os.environ.get("RENDER"))
+
+# Entire website crawl limits
+DEEP_MAX_PAGES = 5 if IS_LIVE else 120
+DEEP_MAX_LINKS_PER_PAGE = 5 if IS_LIVE else 12
+DEEP_MAX_DEPTH = 2 if IS_LIVE else 4
+
+# Single page (always safe)
+DEFAULT_MAX_PAGES = 1
 DEFAULT_MAX_LINKS_PER_PAGE = 8
-DEFAULT_MAX_DEPTH = 2
+DEFAULT_MAX_DEPTH = 1
 
-REQUEST_TIMEOUT = 8
-DELAY_BETWEEN_REQUESTS = 0.15
+REQUEST_TIMEOUT = 6 if IS_LIVE else 8
+DELAY_BETWEEN_REQUESTS = 0.2
 
 TRACKING_PARAMS = {
     "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
     "gclid", "fbclid", "msclkid", "_hsenc", "_hsmi"
 }
+
 
 # -----------------------------
 # URL normalization + small cache
